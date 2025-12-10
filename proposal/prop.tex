@@ -1,0 +1,161 @@
+\documentclass[11pt, a4paper]{article}
+
+% --- PREAMBLE (pdfLaTeX compatible) ---
+
+% 1. GEOMETRY
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+
+% 2. FONT & ENCODING (for pdfLaTeX)
+\usepackage[utf8]{inputenc} % Handle text encoding
+\usepackage[T1]{fontenc}  % Handle font encoding
+\usepackage{lmodern}        % Use the "Latin Modern" font (nicer than default)
+
+% 3. MATH PACKAGES
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% 4. OTHER PACKAGES
+\usepackage[colorlinks, urlcolor=blue]{hyperref} % For hyperlinks
+
+% --- DOCUMENT ---
+
+\begin{document}
+
+\section{Standard Contrastive Representation Distillation (CRD) (From the original paper)}
+
+Standard CRD operates in a self-supervised manner. Its goal is to make a student network's feature representation for a given sample mimic the teacher's representation for that \textbf{same} sample, while being distinct from the teacher's representations for all \textbf{other} samples.
+
+\subsection{Components and Dynamics}
+The setup for a single sample $i$ (the "anchor") is as follows:
+
+\begin{itemize}
+    \item \textbf{Anchor ($\mathbf{s}_i$):} The feature vector from the \textbf{student network} for sample $i$. \textbf{This is the only component that moves}; it receives all gradients.
+    \item \textbf{Positive ($\mathbf{t}_i$):} The feature vector from the \textbf{teacher network} for the \textit{exact same sample} $i$. This is a \textbf{fixed target} in the embedding space.
+    \item \textbf{Negatives ($\{\mathbf{t}_j\}_{j \neq i}$):} The set of feature vectors from the \textbf{teacher network} for all \textit{other samples} $j$ in the batch or memory bank. These are \textbf{fixed repellents}.
+\end{itemize}
+
+The loss function, a form of InfoNCE, enforces two dynamics:
+\begin{enumerate}
+    \item \textbf{The "Pull":} The loss pulls the student anchor $\mathbf{s}_i$ closer to its corresponding teacher positive $\mathbf{t}_i$.
+    \item \textbf{The "Push":} The loss simultaneously pushes the student anchor $\mathbf{s}_i$ away from \textit{all} teacher negatives $\{\mathbf{t}_j\}$.
+\end{enumerate}
+
+\subsection{The Loss Function}
+For a single student anchor $\mathbf{s}_i$, the loss is:
+$$
+\mathcal{L}_{\text{CRD}, i} = - \log \left( \frac{\exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_i) / \tau)}{\exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_i) / \tau) + \sum_{j \neq i} \exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_j) / \tau)} \right)
+$$
+where $\text{sim}(\cdot, \cdot)$ is a similarity function (e.g., dot product) and $\tau$ is a temperature hyperparameter. The student's parameters are updated to minimize this loss, moving $\mathbf{s}_i$ to "hit the target" $\mathbf{t}_i$ while dodging all "repellents" $\mathbf{t}_j$.
+
+\section{From Self-Supervised to Supervised Contrastive Distillation (SupCRD)}
+
+Supervised Contrastive Representation Distillation (SupCRD) incorporates label information while shaping the student's latent. 
+
+\subsection{Components and Dynamics}
+The setup for a student anchor $\mathbf{s}_i$ (with label $y_i$) is:
+\begin{itemize}
+    \item \textbf{Anchor ($\mathbf{s}_i$):} Same as before (student vector, $y_i$).
+    \item \textbf{Positives ($P(i)$):} The set of \textit{all} teacher vectors with the \textbf{same label} as the anchor. $P(i) = \{\mathbf{t}_k \mid y_k = y_i \}$.
+    \item \textbf{Negatives ($N(i)$):} The set of \textit{all} teacher vectors with \textbf{different labels}. $N(i) = \{\mathbf{t}_j \mid y_j \neq y_i \}$.
+\end{itemize}
+
+This modification directly structures the latent space based on class. The student's "dog" vector ($\mathbf{s}_i$) is now pulled towards the \textit{entire cluster} of teacher "dog" vectors, and pushed away from \textit{all} "cat", "truck", and "plane" vectors.
+
+\subsection{The Loss Function}
+The loss is modified to sum over all positives in the numerator:
+$$
+\mathcal{L}_{\text{SupCRD}, i} = - \log \left( \frac{\sum_{\mathbf{t}_k \in P(i)} \exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_k) / \tau)}{\sum_{\mathbf{t}_k \in P(i)} \exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_k) / \tau) + \sum_{\mathbf{t}_j \in N(i)} \exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_j) / \tau)} \right)
+$$
+This is a powerful loss, but it is still rigid. It pushes all negative \textit{classes} away with equal force.
+
+\section{(MAIN PART) Proposed Method: Logit-Weighted SupCRD ($\sim$ Decoupled Feature Distillation)}
+
+We modify the SupCRD loss to distill the teacher's "dark knowledge." The core idea is to use the \textbf{teacher's output probabilities} for the \textit{anchor sample $i$} to dynamically weight the push and pull forces.
+
+Let $\mathbf{z}^T_i$ be the teacher's logit vector for the anchor sample $i$.
+Let $P^T_i = \text{softmax}(\mathbf{z}^T_i / T_{kd})$ be the teacher's soft probability distribution (where $T_{kd}$ is the distillation temperature).
+Let $p^T_i(y_c)$ be the teacher's soft probability for any given class $y_c$.
+
+\subsection{The Logit-Weighted Loss Function}
+
+We introduce two new weighting terms, $w_{\text{pull}}$ and $w_{\text{push}}$, into the SupCRD loss. These weights are controlled by base hyperparameters $\alpha$ and $\beta$ (from DKD), and modulated by the teacher's probabilities to achieve \textbf{full decoupling} of target and non-target class knowledge.
+
+\begin{itemize}
+    \item \textbf{Pull Weight ($w_{\text{pull}}$):} The "pull" force is now \textbf{adaptive}, modulated by the teacher's confidence on the target class. When the teacher is confident about the correct class (high $p^T_i(y_i)$), the pull is strengthened, as these are reliable examples that define the cluster center. When the teacher is uncertain (low $p^T_i(y_i)$), the pull is weakened, preventing hard/ambiguous examples from dominating the cluster structure.
+    $$ w_{\text{pull}, i} = \alpha \cdot p^T_i(y_i) $$
+
+    \item \textbf{Push Weight ($w_{\text{push}}$):} The "push" force for each negative $\mathbf{t}_j$ (with class $y_j$) is scaled \textit{inversely} to its semantic similarity. We use $(1 - p^T_i(y_j))$ as the weight, so that semantically distant negatives are pushed harder.
+    $$ w_{\text{push}, ij} = \beta \cdot (1 - p^T_i(y_j)) $$
+\end{itemize}
+
+The new hybrid loss function for anchor $\mathbf{s}_i$ (with true label $y_i$) becomes:
+
+$$
+\mathcal{L}_{\text{Hybrid}, i} = - \log \left( \frac{(w_{\text{pull}, i}) \sum_{\mathbf{t}_k \in P(i)} \exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_k) / \tau)}{(w_{\text{pull}, i}) \sum_{\mathbf{t}_k \in P(i)} \exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_k) / \tau) + \sum_{\mathbf{t}_j \in N(i)} (w_{\text{push}, ij}) \cdot \exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_j) / \tau)} \right)
+$$
+Substituting the definitions of the weights:
+$$
+\mathcal{L}_{\text{Hybrid}, i} = - \log \left( \frac{(\alpha \cdot p^T_i(y_i)) \sum_{\mathbf{t}_k \in P(i)} \exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_k) / \tau)}{(\alpha \cdot p^T_i(y_i)) \sum_{\mathbf{t}_k \in P(i)} \exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_k) / \tau) + \sum_{\mathbf{t}_j \in N(i)} (\beta \cdot (1 - p^T_i(y_j))) \cdot \exp(\text{sim}(\mathbf{s}_i, \mathbf{t}_j) / \tau)} \right)
+$$
+
+\subsection{What This Achieves: Rich Semantic Structuring with Full Decoupling}
+
+This formulation intelligently combines the strengths of SupCon and logit distillation. It uses the teacher's dark knowledge to build a semantically meaningful feature space while achieving \textbf{full decoupling} of target-class and non-target-class knowledge.
+
+\begin{itemize}
+    \item \textbf{Adaptive Pull (Target-Class Knowledge):} By setting $w_{\text{pull}} = \alpha \cdot p^T_i(y_i)$, the pull force adapts to example difficulty:
+    \begin{itemize}
+        \item \textbf{Easy examples:} Teacher confident ($p^T_i(y_i) \approx 1$) $\rightarrow$ Strong pull ($w_{\text{pull}} \approx \alpha$)
+        \item \textbf{Hard examples:} Teacher uncertain ($p^T_i(y_i) \approx 0.5$) $\rightarrow$ Moderate pull ($w_{\text{pull}} \approx 0.5\alpha$)
+        \item This prevents "over-pulling" on easy examples while still maintaining cluster cohesion
+    \end{itemize}
+    
+    \item \textbf{Intelligent, Non-Uniform Push (Non-Target-Class Knowledge):} The "push" force is weighted to create a semantic geometry:
+    \begin{itemize}
+        \item Let the anchor $\mathbf{s}_i$ be a 'dog' ($y_i = \text{'dog'}$).
+        \item \textbf{Confusing Negative (e.g., 'wolf'):} Let $\mathbf{t}_j$ be a 'wolf' vector ($y_j = \text{'wolf'}$). The teacher is confused, so its probability is high: $p^T_i(\text{'wolf'}) = 0.3$.
+        The push weight is $w_{\text{push}} = \beta \cdot (1 - 0.3) = \beta \cdot 0.7$ (a \textbf{moderate} push).
+        
+        \item \textbf{Irrelevant Negative (e.g., 'car'):} Let $\mathbf{t}_l$ be a 'car' vector ($y_l = \text{'car'}$). The teacher is confident this is not a car, so $p^T_i(\text{'car'}) = 0.001$.
+        The push weight is $w_{\text{push}} = \beta \cdot (1 - 0.001) = \beta \cdot 0.999$ (a \textbf{very strong} push).
+    \end{itemize}
+    
+    \item \textbf{Rich Semantic Structuring:} The student's latent space is forced to learn the teacher's semantic similarity map. The loss explicitly penalizes closeness to 'car' (a distant class) \textbf{more} than it penalizes closeness to 'wolf' (a similar class). This directly achieves the goal of making $\text{sim}(\mathbf{s}_{\text{dog}}, \mathbf{t}_{\text{wolf}}) > \text{sim}(\mathbf{s}_{\text{dog}}, \mathbf{t}_{\text{car}})$.
+    
+    \item \textbf{Full Decoupling:} $\alpha$ controls target-class structure (intra-class compactness) while $\beta$ controls non-target-class structure (inter-class semantic distances). These can now be tuned independently, with both utilizing the teacher's probability distribution to weight their respective contributions.
+    
+    \item \textbf{Tunable Control:} $\alpha$ and $\beta$ act as global knobs to balance the overall importance of the "pull" (cluster tightness) vs. the "push" (semantic separation).
+\end{itemize}
+
+
+\subsection{Solving the "Hard Positive" Problem with Adaptive Weighting}
+
+A known issue in standard SupCon is that the gradients are "coupled": the total pull force on positives mathematically equals the total push force on all negatives. This creates a problem with \textbf{hard positives}:
+
+\begin{enumerate}
+    \item A single hard positive (where $\mathbf{s}_i$ is far from its positive $\mathbf{t}_k$) creates a \textit{massive} pull gradient.
+    \item Due to the coupling, this also creates a \textit{massive} total push gradient.
+    \item In standard SupCon, this huge push gradient is "wasted" by being distributed democratically and thinly across \textit{all} negatives (e.g., 1000 of them). The push on any \textit{individual} negative becomes uselessly small.
+\end{enumerate}
+
+\textbf{The logit-weighted approach with adaptive pull solves this problem more effectively.}
+
+\begin{itemize}
+    \item \textbf{Adaptive Pull on Hard Positives:} Hard positives often correspond to examples where the teacher is less confident. With $w_{\text{pull}} = \alpha \cdot p^T_i(y_i)$, the pull weight naturally adapts:
+    \begin{itemize}
+        \item If the teacher is uncertain ($p^T_i(y_i) = 0.6$), the pull is moderated ($w_{\text{pull}} = 0.6\alpha$)
+        \item This prevents excessively large pull gradients while still maintaining directional guidance
+    \end{itemize}
+    
+    \item \textbf{Intelligent Push Redistribution:} The resulting push gradient is \textbf{diverted} based on semantic relevance:
+    \begin{itemize}
+        \item Semantically \textbf{close} negatives get \textbf{small} weights (e.g., $p^T_i(\text{'wolf'}) = 0.3 \rightarrow w_{\text{push}} = 0.7\beta$)
+        \item Semantically \textbf{distant} negatives get \textbf{large} weights (e.g., $p^T_i(\text{'car'}) = 0.001 \rightarrow w_{\text{push}} = 0.999\beta$)
+    \end{itemize}
+    
+    \item \textbf{Efficient Gradient Utilization:} The available push gradient is concentrated where it matters most—pushing away truly irrelevant classes—while applying a gentler, more "respectful" push to semantically similar classes. This allows the feature space to develop proper semantic structure rather than forcing all non-target classes to be equally distant.
+\end{itemize}
+
+This adaptive weighting scheme achieves a highly logical outcome: gradients are allocated proportionally to semantic relevance, creating a feature space that naturally encodes the teacher's knowledge about both target-class cohesion and inter-class semantic relationships.
+
+\end{document}
