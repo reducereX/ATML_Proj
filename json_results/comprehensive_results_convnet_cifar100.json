@@ -1,0 +1,66 @@
+{
+  "config": {
+    "dataset": "CIFAR-100",
+    "teacher_arch": "convnet",
+    "student_arch": "convnet",
+    "epochs_teacher": 20,
+    "epochs_student": 40,
+    "batch_size": 128,
+    "lr": 0.001,
+    "temperature": 0.07
+  },
+  "teacher": {
+    "test_acc": 51.06
+  },
+  "baseline_supcon": {
+    "test_acc": 47.86
+  },
+  "alpha_sweep": {
+    "1.0": {
+      "train": 51.358,
+      "test": 50.89
+    },
+    "2.0": {
+      "train": 50.896,
+      "test": 50.48
+    }
+  },
+  "beta_sweep": {
+    "1.0": {
+      "train": 51.358,
+      "test": 50.89
+    },
+    "12.0": {
+      "train": 53.036,
+      "test": 51.5
+    }
+  },
+  "temp_sweep": {
+    "0.05": {
+      "train": 51.55,
+      "test": 50.17
+    },
+    "0.07": {
+      "train": 52.926,
+      "test": 51.55
+    }
+  },
+  "hybrid_sweep": {
+    "0.3": {
+      "train": 50.672,
+      "test": 49.89
+    },
+    "0.5": {
+      "train": 50.256,
+      "test": 49.04
+    },
+    "0.7": {
+      "train": 50.01,
+      "test": 48.37
+    },
+    "0.9": {
+      "train": 49.014,
+      "test": 48.3
+    }
+  }
+}
