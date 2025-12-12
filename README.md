@@ -104,14 +104,6 @@ model.eval()
 # Use for inference...
 ```
 
-### Re-running Experiments
-
-To reproduce the experiments from scratch, run:
-
-```bash
-python desupcon.py
-```
-
 **Note:** Set `FORCE_RETRAIN = True` in the script to retrain models instead of loading cached weights.
 
 ## Model Architecture
