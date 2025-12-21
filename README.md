@@ -14,7 +14,7 @@ This project implements and evaluates different contrastive distillation methods
 
 ### 2. Create Directory Structure
 
-Create a `pth_models/` folder at the same level as the main notebook:
+Create a `pth_models/` folder at the same level as the respective notebook:
 
 ```bash
 mkdir pth_models

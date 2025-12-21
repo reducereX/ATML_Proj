@@ -1,0 +1,66 @@
+{
+  "config": {
+    "dataset": "CIFAR-100",
+    "teacher_arch": "resnet50",
+    "student_arch": "resnet18",
+    "epochs_teacher": 50,
+    "epochs_student": 50,
+    "batch_size": 128,
+    "lr": 0.001,
+    "temperature": 0.07
+  },
+  "teacher": {
+    "test_acc": 80.75
+  },
+  "baseline_supcon": {
+    "test_acc": 69.08
+  },
+  "alpha_sweep": {
+    "1.0": {
+      "train": 98.622,
+      "test": 72.3
+    },
+    "2.0": {
+      "train": 97.868,
+      "test": 70.98
+    }
+  },
+  "beta_sweep": {
+    "1.0": {
+      "train": 98.622,
+      "test": 72.3
+    },
+    "10.0": {
+      "train": 99.362,
+      "test": 72.02
+    }
+  },
+  "temp_sweep": {
+    "0.05": {
+      "train": 99.016,
+      "test": 72.28
+    },
+    "0.07": {
+      "train": 99.332,
+      "test": 71.63
+    }
+  },
+  "hybrid_sweep": {
+    "0.3": {
+      "train": 99.32,
+      "test": 71.17
+    },
+    "0.5": {
+      "train": 99.2,
+      "test": 70.89
+    },
+    "0.7": {
+      "train": 98.666,
+      "test": 70.52
+    },
+    "0.9": {
+      "train": 95.82,
+      "test": 70.98
+    }
+  }
+}

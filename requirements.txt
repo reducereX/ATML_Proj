@@ -1,0 +1,7 @@
+detectors
+matplotlib
+numpy
+scikit-learn
+timm
+torch
+torchvision
