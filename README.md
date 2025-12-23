@@ -434,11 +434,11 @@ with torch.no_grad():
 If you use this code or findings in your research, please cite:
 
 ```bibtex
-@misc{lw_supcrd2024,
+@misc{lw_supcrd2025,
   title={Logit-Weighted Supervised Contrastive Representation Distillation: 
          Achieving Superior Uniformity through Semantic Force Weighting},
   author={Ibrahim Murtaza, Jibran Mazhar, Muhammad Ahsan Salar Khan},
-  year={2024},
+  year={2025},
   institution={Lahore University of Management Sciences (LUMS)},
   course={EE-5102/CS-6304: Advanced Topics in Machine Learning},
   instructor={Professor Muhammad Tahir},
@@ -508,6 +508,6 @@ For questions or issues, please open an issue on the repository or contact the t
 
 ---
 
-**Last Updated:** December 23, 2024
+**Last Updated:** December 23, 2025
 
 **Status:** ✅ All experiments completed | 📊 Results finalized | 🎯 Best model: 73.35% accuracy
