@@ -303,9 +303,26 @@ Measures hypersphere coverage - more negative = better spread.
 
 All experiments include:
 - **t-SNE plots:** 2D projection of learned representations (20 classes)
+  - Static PNG files: `plots/tsne_*.png`
+  - Open directly in any image viewer
+  
 - **3D Hypersphere:** Interactive Plotly visualizations (`.html` files)
+  - Interactive HTML files: `plots/*_hypersphere.html`
+  - **How to view:** Simply double-click the `.html` file to open in your web browser
+  - Features: Rotate with mouse, zoom with scroll, click legend to toggle classes
+  - Shows both "All Classes" and "10 Random Classes" views side-by-side
+  - Example files:
+    - `plots/alpha_1.0_hypersphere.html` - Best α configuration
+    - `plots/temp_0.07_hypersphere.html` - Best temperature (73.35% model)
+    - `plots/baseline_supcon_hypersphere.html` - Baseline comparison
+  
 - **Alignment/Uniformity:** Comprehensive Wang & Isola analysis
+  - Static PNG files: `plots/*_alignment.png`
+  - Shows histograms, density plots, and per-class angular distributions
+  
 - **Training logs:** JSON files with per-epoch metrics
+  - Location: `json_results/training_logs/*.json`
+  - Contains: epoch-by-epoch loss, accuracy, learning rate
 
 ---
 
@@ -317,6 +334,44 @@ pip install numpy matplotlib scikit-learn scipy
 pip install plotly  # For interactive 3D visualizations
 pip install tqdm
 ```
+
+---
+
+## Viewing Interactive Visualizations
+
+### 3D Hypersphere Plots (HTML Files)
+
+The repository includes **interactive 3D hypersphere visualizations** that show how representations are distributed on the unit sphere:
+
+**To view:**
+1. Navigate to the `plots/` folder
+2. Double-click any `*_hypersphere.html` file
+3. Your default web browser will open the visualization
+
+**Interactive controls:**
+- **Rotate:** Click and drag with mouse
+- **Zoom:** Scroll wheel
+- **Pan:** Right-click and drag (or Shift + drag)
+- **Toggle classes:** Click legend items to show/hide classes
+- **Reset view:** Double-click the plot
+
+**Recommended visualizations to explore:**
+```
+plots/temp_0.07_hypersphere.html          # 🏆 Best model (73.35%)
+plots/baseline_supcon_hypersphere.html     # Compare with baseline (69.08%)
+plots/undistilled_hypersphere.html         # See the improvement
+plots/hybrid_lambda_0.3_hypersphere.html   # Best hybrid (overfitting example)
+```
+
+**What to look for:**
+- **Left panel:** All 100 classes - should show good spread across sphere
+- **Right panel:** 10 random classes - shows cluster separation clearly
+- **Color gradient:** Represents class labels (0-99)
+- **Point density:** Tighter clusters = better alignment, spread = better uniformity
+
+**Browser compatibility:** Works best in Chrome/Firefox/Edge. Safari may have minor rendering differences.
+
+---
 
 ## Usage
 
@@ -379,11 +434,11 @@ with torch.no_grad():
 If you use this code or findings in your research, please cite:
 
 ```bibtex
-@misc{lw_supcrd2025,
+@misc{lw_supcrd2024,
   title={Logit-Weighted Supervised Contrastive Representation Distillation: 
          Achieving Superior Uniformity through Semantic Force Weighting},
   author={Ibrahim Murtaza, Jibran Mazhar, Muhammad Ahsan Salar Khan},
-  year={2025},
+  year={2024},
   institution={Lahore University of Management Sciences (LUMS)},
   course={EE-5102/CS-6304: Advanced Topics in Machine Learning},
   instructor={Professor Muhammad Tahir},
@@ -453,6 +508,6 @@ For questions or issues, please open an issue on the repository or contact the t
 
 ---
 
-**Last Updated:** December 23, 2025
+**Last Updated:** December 23, 2024
 
 **Status:** ✅ All experiments completed | 📊 Results finalized | 🎯 Best model: 73.35% accuracy
