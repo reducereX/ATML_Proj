@@ -1,9 +1,9 @@
-# Supervised Contrastive Representation Distillation (SupCRD)
+# Logit-Weighted Supervised Contrastive Representation Distillation (LW-SupCRD)
 
 ## Project Overview
-This project implements and evaluates **Logit-Weighted Supervised Contrastive Representation Distillation (LW-SupCRD)**, a novel knowledge distillation framework that combines supervised contrastive learning with teacher-guided semantic weighting. We compare two teacher representation strategies on CIFAR-100:
-- **Cosine Projection Head**: Trained 64-dim projection optimized for hypersphere geometry
-- **Random Projection**: Fixed random projection from 2048-dim raw features to 64-dim
+This project implements and evaluates **Logit-Weighted Supervised Contrastive Representation Distillation (LW-SupCRD)**, a novel knowledge distillation framework that combines supervised contrastive learning with teacher-guided semantic weighting on CIFAR-100.
+
+**Key Innovation:** Uses teacher logits to semantically weight contrastive forces, achieving superior representation learning compared to standard supervised contrastive methods.
 
 ## Setup Instructions
 
@@ -13,7 +13,7 @@ This project implements and evaluates **Logit-Weighted Supervised Contrastive Re
 🔗 **[Download Models Here](https://drive.google.com/drive/u/0/folders/1oyiYnKOiP7AYYiT7ik0Tq591gtPCJVAo)**
 
 ### 2. Create Directory Structure
-Create a `pth_models/` folder at the same level as the respective notebook:
+Create a `pth_models/` folder at the project root:
 
 ```bash
 mkdir pth_models
@@ -25,6 +25,7 @@ Your directory structure should look like:
 ATML_Proj/
 │
 ├── .gitignore
+├── DeSupCon.ipynb
 ├── LICENSE
 ├── README.md
 ├── requirements.txt
@@ -33,137 +34,278 @@ ATML_Proj/
 │   ├── Decoupled Feature Distillation Idea Explanation.pdf
 │   └── prop.tex (+ LaTeX auxiliary files)
 │
-├── With Cosine Projection Head/
-│   ├── DeSupCon.ipynb
-│   ├── json_results/
-│   │   ├── comprehensive_results_resnet18_cifar100.json
-│   │   └── training_logs/ (α, β, temperature, hybrid experiments)
-│   ├── plots/
-│   │   ├── t-SNE visualizations (tsne_*.png)
-│   │   ├── Hypersphere distributions (*_hypersphere.png)
-│   │   └── Alignment & Uniformity analyses (*_alignment.png)
-│   └── pth_models/
-│       ├── teacher_resnet50_cifar100.pth
-│       ├── teacher_resnet50_cifar100_with_projection.pth
-│       ├── student_baseline_supcon_resnet18_cifar100.pth
-│       └── student_*_resnet18_cifar100.pth (various configs)
+├── json_results/
+│   ├── comprehensive_results_resnet18_cifar100.json
+│   └── training_logs/
+│       ├── teacher_resnet50_cifar100.json
+│       ├── student_baseline_supcon_resnet18_cifar100.json
+│       ├── student_baseline_crd_resnet18_cifar100.json
+│       ├── student_undistilled_resnet18_cifar100.json
+│       ├── student_alpha_*.json (α sweep experiments)
+│       ├── student_*_beta_*.json (β sweep experiments)
+│       ├── student_*_temp_*.json (temperature sweep)
+│       └── student_hybrid_lambda_*.json (hybrid loss experiments)
 │
-└── Without Cosine Projection Head/
-    ├── DeSupCon_without_projection.ipynb
-    ├── json_results/ (same structure as above)
-    ├── plots/ (same structure as above)
-    └── pth_models/
-        ├── teacher_resnet50_cifar100.pth
-        ├── student_baseline_supcon_resnet18_cifar100.pth
-        └── student_*_resnet18_cifar100.pth (various configs)
+├── plots/
+│   ├── t-SNE visualizations (tsne_*.png)
+│   ├── 3D hypersphere distributions (*_hypersphere.html)
+│   └── Alignment & Uniformity analyses (*_alignment.png)
+│
+└── pth_models/
+    ├── teacher_resnet50_cifar100.pth (80.75% acc)
+    ├── teacher_resnet50_cifar100_with_projection.pth
+    ├── student_baseline_supcon_resnet18_cifar100.pth (69.08%)
+    ├── student_baseline_crd_resnet18_cifar100.pth (68.05%)
+    ├── student_undistilled_resnet18_cifar100.pth (67.93%)
+    ├── student_alpha_1.0_beta_10.0_temp_0.07_resnet18_cifar100.pth ⭐ (73.35% - BEST)
+    └── student_*_resnet18_cifar100.pth (various configurations)
 ```
 
 ### 3. Download Required Models
 
-Download these essential models from Google Drive and place them in the appropriate `pth_models/` directory:
+Download these essential models from Google Drive and place them in `pth_models/`:
 
 #### Core Models (Required)
 - `teacher_resnet50_cifar100.pth` - Teacher model (80.75% accuracy)
-- `student_baseline_supcon_resnet18_cifar100.pth` - Baseline student (69.08% accuracy)
+- `teacher_resnet50_cifar100_with_projection.pth` - Teacher with trained 64-dim cosine projection
+- `student_baseline_supcon_resnet18_cifar100.pth` - Baseline SupCon student (69.08%)
 
-#### Cosine Projection Approach (Recommended)
-- `teacher_resnet50_cifar100_with_projection.pth` - Teacher with trained 64-dim projection
-- `student_hybrid_lambda_0.3_resnet18_cifar100.pth` - **Best cosine model: 71.52% accuracy** 🏆
+#### Best Model (Recommended) 🏆
+- `student_alpha_1.0_beta_10.0_temp_0.07_resnet18_cifar100.pth` - **73.35% accuracy** (best overall)
 
-#### Random Projection Approach (Best Overall)
-- `student_alpha_1.0_beta_1.0_resnet18_cifar100.pth` - **Best overall model: 72.30% accuracy** 🏆🏆
+#### Baselines & Ablations (Optional)
+- `student_baseline_crd_resnet18_cifar100.pth` - Baseline CRD (68.05%)
+- `student_undistilled_resnet18_cifar100.pth` - Undistilled student (67.93%)
+- Various α, β, temperature, and hybrid configurations
+
+---
 
 ## Results Summary
 
-### **Comparison: Cosine vs Random Projection Teachers**
+### **Main Results - Best Configurations**
 
-| Approach | Teacher Setup | Best Student Config | Test Acc | Δ vs Baseline |
-|----------|---------------|---------------------|----------|---------------|
-| **Random Projection** | Raw 2048-dim + random 64-dim projection | **α=1, β=1** | **72.30%** | **+3.22%** ✅✅ |
-| Random Projection | Raw 2048-dim + random projection | α=1, β=10, τ=0.05 | 72.28% | +3.20% |
-| Cosine Projection | Trained 64-dim projection | **Hybrid λ=0.3** | **71.52%** | **+2.44%** ✅ |
-| Cosine Projection | Trained 64-dim projection | α=1, β=1 | 70.98% | +1.90% |
-| **Baseline** | - | SupCon only | **69.08%** | - |
+| Method | Test Acc | Δ vs SupCon | Alignment ↓ | Uniformity ↓ | Key Features |
+|--------|----------|-------------|-------------|--------------|--------------|
+| **🏆 LW-SupCRD (τ=0.07)** | **73.35%** | **+4.27%** | 1.1990 | **-3.7104** | Best overall - optimal temperature |
+| LW-SupCRD (α=1, β=10) | 73.19% | +4.11% | 1.1518 | **-3.7027** | Near-identical to τ=0.07 |
+| Hybrid (λ=0.3) | 72.58% | +3.50% | **0.6043** | -3.2880 | Best hybrid - severe overfitting |
+| **Baseline SupCon** | 69.08% | - | **0.4377** | -2.5665 | Strong alignment, weak uniformity |
+| Baseline CRD | 68.05% | -1.03% | 0.9008 | -2.2358 | Poor both metrics |
+| Undistilled Student | 67.93% | -1.15% | 0.6631 | -1.7332 | Terrible uniformity |
+| **Teacher (ResNet-50)** | 80.75% | +11.67% | **0.5928** | **-3.4649** | Reference upper bound |
 
----
-
-### **Detailed Results: Random Projection (Best Approach)**
-
-| Configuration | Test Acc | Δ vs Baseline | Intra-class | Inter-class | Uniformity Loss |
-|---------------|----------|---------------|-------------|-------------|-----------------|
-| **α=1, β=1** | **72.30%** | **+3.22%** ✅ | 0.45 | **0.98** | **-3.60** |
-| α=1, β=10, τ=0.05 | 72.28% | +3.20% | 0.50 | 0.96 | **-3.68** |
-| α=1, β=10, τ=0.07 | 71.63% | +2.55% | 0.42 | **0.99** | -3.61 |
-| α=1, β=10 | 72.02% | +2.94% | 0.42 | **0.99** | -3.60 |
-| Hybrid λ=0.3 | 71.17% | +2.09% | 0.37 | **0.98** | -3.52 |
-| α=2, β=1 | 70.98% | +1.90% | 0.48 | 0.95 | -3.62 |
-
-**Key Insight:** Pure SupCRD (α=β=1) achieves **exceptional uniformity** (-3.60) and near-perfect inter-class separation (0.98), outperforming hybrid approaches.
+**Key Takeaway:** LW-SupCRD achieves **73.35%** with best-in-class uniformity (**-3.7104**), even surpassing the teacher's uniformity (-3.4649), while maintaining competitive alignment for superior generalization.
 
 ---
 
-### **Detailed Results: Cosine Projection**
+### **Comprehensive Experimental Results**
 
-| Configuration | Test Acc | Δ vs Baseline | Intra-class | Inter-class | Uniformity Loss |
-|---------------|----------|---------------|-------------|-------------|-----------------|
-| **Hybrid λ=0.3** | **71.52%** | **+2.44%** ✅ | 0.32 | 0.83 | -3.18 |
-| Hybrid λ=0.7 | 71.22% | +2.14% | 0.26 | 0.71 | -2.89 |
-| Hybrid λ=0.5 | 71.15% | +2.07% | 0.27 | 0.71 | -2.91 |
-| Hybrid λ=0.9 | 71.00% | +1.92% | 0.23 | 0.66 | -2.69 |
-| α=1, β=1 | 70.98% | +1.90% | 0.47 | **0.99** | **-3.67** |
-| α=1, β=10, τ=0.05 | 70.70% | +1.62% | 0.48 | 0.97 | -3.62 |
-| α=1, β=10, τ=0.07 | 70.50% | +1.42% | 0.45 | **0.99** | **-3.68** |
-| α=1, β=10 | 70.30% | +1.22% | 0.46 | **0.99** | -3.62 |
+#### 1. **Alpha (α) Sweep - Pull Force Weighting**
+*Configuration: β=10, τ=0.07, adaptive β*
 
-**Key Insight:** Hybrid loss (30% SupCon + 70% SupCRD) provides best balance between alignment and uniformity for cosine projection teacher.
+| α | Test Acc | Δ vs SupCon | Alignment ↓ | Uniformity ↓ | Observation |
+|---|----------|-------------|-------------|--------------|-------------|
+| **1.0** | **73.19%** | **+4.11%** | 1.1518 | **-3.7027** | ✅ Optimal balance |
+| 2.0 | 71.78% | +2.70% | **1.1129** | -3.6744 | Tighter clusters → worse uniformity |
+| 5.0 | 70.67% | +1.59% | 1.1589 | -3.6712 | Over-clustering |
+| 10.0 | 70.07% | +0.99% | 1.2754 | -3.6728 | Severe over-clustering |
+
+**Finding:** α=1 optimal - higher α causes tighter clusters, sacrificing uniformity and causing overfitting.
 
 ---
 
-### **Teacher Comparison**
+#### 2. **Beta (β) Sweep - Push Force Strength**
+*Configuration: α=1, τ=0.07, adaptive β*
 
-| Teacher Type | Accuracy | Intra-class | Inter-class | Sep. Ratio | Uniformity Loss |
-|--------------|----------|-------------|-------------|------------|-----------------|
-| Cosine Projection (64-dim) | 80.75% | 0.30 | **0.95** | **3.21** | **-3.50** ✅ |
-| Raw Features (2048-dim) | 80.75% | **0.23** | 0.61 | 2.62 | -2.63 |
+| β | Test Acc | Δ vs SupCon | Alignment ↓ | Uniformity ↓ | Observation |
+|---|----------|-------------|-------------|--------------|-------------|
+| **10.0** | **73.19%** | **+4.11%** | **1.1518** | **-3.7027** | ✅ Optimal - strong push |
+| 12.0 | 71.31% | +2.23% | 1.2068 | -3.6654 | Too strong → degradation |
+| 5.0 | 70.63% | +1.55% | 1.2487 | -3.6785 | Weak push → poor separation |
+| 1.0 | 70.46% | +1.38% | 1.1862 | -3.6390 | Very weak push |
 
-**Paradox:** Despite cosine projection having superior geometry (uniformity -3.50 vs -2.63), random projection students perform better (72.30% vs 71.52%). This suggests that preserving raw high-dimensional features + simple random projection is more effective than learned low-dimensional projections.
+**Finding:** β=10 optimal - balances strong class separation with stable training. Too high causes instability, too low fails to separate classes.
+
+---
+
+#### 3. **Temperature (τ) Sweep - Gradient Sharpness**
+*Configuration: α=1, β=10, adaptive β*
+
+| τ | Test Acc | Δ vs SupCon | Alignment ↓ | Uniformity ↓ | Observation |
+|---|----------|-------------|-------------|--------------|-------------|
+| **0.07** | **73.35%** | **+4.27%** | 1.1990 | **-3.7104** | ✅ Optimal - balanced spread |
+| 0.05 | 68.08% | -1.00% | 1.3503 | -3.6645 | Too sharp → poor alignment |
+
+**Finding:** τ=0.07 provides optimal gradient flow - τ=0.05 too sharp, only closest pairs contribute.
+
+---
+
+#### 4. **Hybrid Loss (λ) Sweep - SupCon + LW-SupCRD Mix**
+*Formula: `L = λ × SupCon + (1-λ) × LW-SupCRD`*
+*Configuration: α=1, β=10, τ=0.07*
+
+| λ | Test Acc | Train Acc | Gap | Alignment ↓ | Uniformity ↓ | Observation |
+|---|----------|-----------|-----|-------------|--------------|-------------|
+| **0.3** | **72.58%** | 98.73% | **26.15%** | **0.6043** | -3.2880 | Best hybrid - severe overfitting |
+| 0.5 | 72.07% | 98.92% | 26.85% | **0.5166** | -2.9451 | Worse overfitting |
+| 0.7 | 71.57% | 98.25% | 26.68% | **0.4845** | -2.8290 | Poor uniformity |
+| 0.9 | 70.69% | 95.40% | 24.71% | **0.4394** | -2.6273 | Approaching pure SupCon |
+
+**Critical Finding:** All hybrids show massive overfitting (24-27% gap) despite excellent alignment. **Pure LW-SupCRD (73.35%) beats best hybrid (72.58%)** - adding SupCon only adds noise.
 
 ---
 
 ## Key Findings
 
-### **1. Random Projection Wins for Pure SupCRD** 🏆
-- **72.30% accuracy** (α=1, β=1) beats cosine projection by +0.78%
-- Preserves teacher's strong backbone features (80.75% accuracy)
-- Achieves exceptional uniformity (-3.60) with near-perfect inter-class separation (0.98)
-- **No projection training needed** - simpler and more effective
+### **1. The Alignment-Uniformity Trade-off for CIFAR-100** 📊
 
-### **2. The Alignment-Uniformity Trade-off**
-Students sacrifice tight clusters (alignment) for maximum class separation (uniformity):
-- **High uniformity** (near-orthogonal classes) is critical for performance
-- Looser clusters (0.45 intra-class) acceptable if classes well-separated (0.98 inter-class)
-- Linear classifier only needs separation, not tight clusters
+For fine-grained classification (100 classes), **uniformity is more critical than tight alignment:**
 
-### **3. Hyperparameter Insights**
-- **α (pull force):** α=1 optimal - higher values don't improve accuracy
-- **β (push force):** β=1 optimal with high-quality teacher (80.75%)
-  - β=12 was optimal with weaker teacher (72.17%) in earlier experiments
-  - Teacher quality determines optimal β
-- **Temperature:** τ=0.05 slightly better than τ=0.07 for random projection
+**Best Methods (73%+):**
+- Alignment: ~1.15-1.20 (moderate clusters)
+- Uniformity: ~-3.70 (excellent spread)
+- Strategy: Trade cluster tightness for class separation
 
-### **4. Semantic Structure Preserved**
-Both approaches achieve **negative cosine similarities** for dissimilar classes:
+**Worst Methods (68%-):**
+- Alignment: ~0.44-0.66 (very tight clusters)
+- Uniformity: ~-2.50 to -1.73 (poor spread)
+- Problem: Over-clustering causes poor separation
 
-**Random Projection (α=1, β=1):**
-- Similar pairs: baby-boy (0.20), bear-otter (0.47)  
-- Dissimilar pairs: baby-worm (**-0.09**), bear-bicycle (**-0.04**)
+**Counter-intuitive Insight:** Student's "worse" alignment (1.20 vs teacher's 0.59) actually helps generalization by maintaining better class separation on the hypersphere.
 
-**Cosine Projection (α=1, β=1):**
-- Similar pairs: baby-boy (0.34), bear-otter (0.55)
-- Dissimilar pairs: baby-worm (**-0.05**), bear-bicycle (**-0.28**)
+---
 
-### **5. Student Outperforms Teacher**
-Best student (72.30%) surpasses teacher backbone (80.75% → 72.30% when using only contrastive head without classifier finetuning), demonstrating effective knowledge distillation through contrastive representation learning.
+### **2. Hyperparameter Roles & Interactions**
+
+**α (Pull Weight) - Semantic Confidence:**
+- Controls cluster tightness via teacher probabilities
+- α=1 optimal: Minimal semantic weighting
+- Higher α → tighter clusters → worse uniformity → overfitting
+- Effect: Primarily degrades uniformity
+
+**β (Push Weight) - Negative Force Strength:**
+- Controls class separation strength
+- β=10 optimal: Strong push forces
+- Critical discovery: Affects **both** alignment AND uniformity simultaneously
+- Unlike α, strong β improves both metrics
+
+**τ (Temperature) - Gradient Sharpness:**
+- Controls exponential scaling in similarity
+- τ=0.07 optimal: Balanced gradient flow
+- τ=0.05 too sharp: Only nearest neighbors contribute
+- Effect: Primarily affects uniformity
+
+**Adaptive β - Curriculum Learning:**
+- Early epochs (uncertain): β_eff = 1.25β (stronger push)
+- Late epochs (confident): β_eff = 0.71β (weaker push)
+- Provides natural hard negative mining
+
+---
+
+### **3. Why Hybrids Fail** ❌
+
+All hybrid losses (λ=0.3 to 0.9) show:
+- ✓ Excellent alignment (0.44-0.60, like teacher)
+- ✗ Poor uniformity (-2.6 to -3.3)
+- ✗ Massive overfitting (24-27% train-test gap)
+- ✗ Lower accuracy than pure LW-SupCRD
+
+**Root Cause:** SupCon's pull-only forces create over-tight clusters, sacrificing the uniformity that LW-SupCRD's strong push forces (β=10) achieve.
+
+**Conclusion:** Pure LW-SupCRD (73.35%) > Best Hybrid (72.58%)
+
+---
+
+### **4. Student Surpasses Teacher in Uniformity** 🎯
+
+| Metric | Teacher | Best Student | Observation |
+|--------|---------|--------------|-------------|
+| Alignment | **0.5928** | 1.1990 | Student 2× looser |
+| Uniformity | -3.4649 | **-3.7104** | Student 7% better |
+| Accuracy | 80.75% | 73.35% | Reasonable gap |
+
+**Key Insight:** Student trades alignment for uniformity and still outperforms all baselines significantly. The looser clusters + better spread = superior linear separability.
+
+---
+
+### **5. Gradient Normalization Critical** ⚙️
+
+The `/α` normalization in the loss prevents gradient saturation:
+- Without: α=2 causes exponentials ~exp(20) = 4.8×10⁸
+- With: Allows proper α scaling without optimization collapse
+- Enables exploration of α>1 configurations
+
+This fix was essential for all α sweep experiments to work.
+
+---
+
+## Technical Details
+
+### Model Architecture
+- **Teacher:** ResNet-50 (23.5M parameters, 80.75% accuracy)
+- **Student:** ResNet-18 (11.2M parameters)
+- **Projection:** 2048-dim backbone → 64-dim contrastive space
+- **Dataset:** CIFAR-100 (100 classes, 50k train / 10k test)
+- **Training:** 50 epochs, batch size 128, Adam optimizer (lr=1e-3)
+
+### Loss Functions
+
+#### 1. **Baseline SupCon** (Khosla et al., 2020)
+Standard supervised contrastive learning - pull positives only.
+
+#### 2. **Baseline CRD** (Tian et al., 2020)
+Contrastive Representation Distillation - instance matching.
+
+#### 3. **LW-SupCRD** (Ours)
+Logit-weighted supervised contrastive with adaptive forces:
+
+```python
+# Pull weight (semantic confidence)
+w_pull = α × p_teacher(correct_class)
+
+# Push weight (inverse adaptive)
+if adaptive_beta:
+    β_effective = β / (p_target + 0.5)
+    w_push = β_effective × (1 - p_teacher(negative_class))
+else:
+    w_push = β × (1 - p_teacher(negative_class))
+
+# Gradient normalization
+loss = -log((w_pull × pos_exp) / (w_pull × pos_exp + w_push × neg_exp))
+loss = loss / α  # CRITICAL: prevents gradient saturation
+```
+
+#### 4. **Hybrid Loss**
+```python
+L = λ × L_SupCon + (1 - λ) × L_LW-SupCRD
+```
+Best: λ=0.3, but still underperforms pure LW-SupCRD.
+
+---
+
+## Visualization & Analysis
+
+### Alignment & Uniformity Metrics (Wang & Isola, 2020)
+
+**Alignment Loss (↓ better):**
+```
+L_align = E[||f(x) - f(x+)||²]
+```
+Measures positive pair distance - lower = tighter clusters.
+
+**Uniformity Loss (↓ better, more negative):**
+```
+L_uniform = log(E[exp(-2||f(x) - f(y)||²)])
+```
+Measures hypersphere coverage - more negative = better spread.
+
+### Available Visualizations
+
+All experiments include:
+- **t-SNE plots:** 2D projection of learned representations (20 classes)
+- **3D Hypersphere:** Interactive Plotly visualizations (`.html` files)
+- **Alignment/Uniformity:** Comprehensive Wang & Isola analysis
+- **Training logs:** JSON files with per-epoch metrics
 
 ---
 
@@ -172,100 +314,145 @@ Best student (72.30%) surpasses teacher backbone (80.75% → 72.30% when using o
 ```bash
 pip install torch torchvision
 pip install numpy matplotlib scikit-learn scipy
-pip install timm tqdm
+pip install plotly  # For interactive 3D visualizations
+pip install tqdm
 ```
 
 ## Usage
 
-### Running Inference with Pre-trained Models
+### Running the Notebook
+
+1. Open `DeSupCon.ipynb` in Jupyter
+2. Download required models from Google Drive
+3. Place models in `pth_models/` directory
+4. Run all cells sequentially
+
+**Training Control:**
+- Set `FORCE_RETRAIN = True` to retrain models (ignores cached weights)
+- Set `FORCE_RETRAIN = False` to load pre-trained models (default)
+
+### Loading Best Model
 
 ```python
 import torch
-from models import ModelWrapper  # Your model definition
+from models import ModelWrapper
 
-# Load the best model (random projection)
+# Load best model
 model = ModelWrapper(num_classes=100, arch='resnet18')
-model.load_state_dict(torch.load('pth_models/student_alpha_1.0_beta_1.0_resnet18_cifar100.pth'))
+checkpoint = torch.load('pth_models/student_alpha_1.0_beta_10.0_temp_0.07_resnet18_cifar100.pth')
+model.load_state_dict(checkpoint)
 model.eval()
 
-# Or load best cosine projection model
-model_cosine = ModelWrapper(num_classes=100, arch='resnet18')
-model_cosine.load_state_dict(torch.load('pth_models/student_hybrid_lambda_0.3_resnet18_cifar100.pth'))
-model_cosine.eval()
+# Inference
+with torch.no_grad():
+    features, projections, logits = model(images)
 ```
 
-**Note:** Set `FORCE_RETRAIN = True` in the notebooks to retrain models instead of loading cached weights.
+---
 
-## Model Architecture
+## Experimental Protocol
 
-- **Teacher:** ResNet-50 (23.5M parameters, 80.75% accuracy)
-- **Student:** ResNet-18 (11.2M parameters)
-- **Dataset:** CIFAR-100 (100 classes, 50k train / 10k test)
-- **Training:** 50 epochs, batch size 128, Adam optimizer (lr=1e-3)
+### Teacher Training
+1. Train ResNet-50 on CIFAR-100 → 80.75% accuracy
+2. Train cosine similarity projection head (2048→64D)
+3. Joint training: projection adapts during student training (CRD-style)
 
-## Loss Functions
+### Student Training
+1. Multi-view augmentation (2 views per sample)
+2. Contrastive loss on encoder projections
+3. Separate linear classifier on frozen features (standard evaluation)
+4. 50 epochs, batch size 128, Adam (lr=1e-3)
 
-### 1. Supervised Contrastive (SupCon) - Baseline
-Standard supervised contrastive learning (Khosla et al., 2020).
+### Comprehensive Analysis Per Experiment
+- t-SNE visualizations (20 sample classes)
+- 3D hypersphere distribution (interactive HTML)
+- Wang & Isola alignment-uniformity metrics
+- Intra/inter-class distance analysis
+- Separation ratio computation
+- Training curves (JSON logs)
+- Model checkpointing for reproducibility
 
-### 2. Logit-Weighted SupCRD (LW-SupCRD)
-Incorporates teacher's probability distribution to weight contrastive forces:
-- **Pull weight (α):** `α × p_teacher(correct_class)`
-- **Push weight (β):** `β × (1 - p_teacher(negative_class))`
-
-Per-negative semantic weighting adapts force based on teacher's confidence.
-
-### 3. Hybrid Loss
-Combines SupCon stability with SupCRD semantic guidance:
-```
-L_hybrid = λ × L_SupCon + (1 - λ) × L_SupCRD
-```
-
-Optimal: **λ=0.3** (30% SupCon, 70% SupCRD) for cosine projection approach.
-
-## Methodology
-
-### Alignment & Uniformity Analysis
-Following Wang & Isola (2020), we analyze representation quality through:
-- **Alignment:** Positive pair feature distance (lower = tighter clusters)
-- **Uniformity:** Angular distribution on unit hypersphere (more negative = better coverage)
-
-### Visualization Tools
-- **t-SNE plots:** 2D visualization of learned representations
-- **Hypersphere distributions:** Intra-class vs inter-class separation metrics
-- **Alignment/Uniformity plots:** Wang & Isola framework analysis
+---
 
 ## Citation
 
-If you use this code or models in your research, please cite:
+If you use this code or findings in your research, please cite:
 
 ```bibtex
 @misc{lw_supcrd2025,
   title={Logit-Weighted Supervised Contrastive Representation Distillation: 
-         A Comparative Study of Projection Strategies},
+         Achieving Superior Uniformity through Semantic Force Weighting},
   author={Ibrahim Murtaza, Jibran Mazhar, Muhammad Ahsan Salar Khan},
   year={2025},
   institution={Lahore University of Management Sciences (LUMS)},
   course={EE-5102/CS-6304: Advanced Topics in Machine Learning},
-  note={Instructor: Professor Muhammad Tahir}
+  instructor={Professor Muhammad Tahir},
+  note={Best Configuration: α=1.0, β=10.0, τ=0.07 achieving 73.35% on CIFAR-100}
 }
 ```
 
-### References
+### Key References
 - Khosla et al., "Supervised Contrastive Learning", NeurIPS 2020
 - Wang & Isola, "Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere", ICML 2020
+- Tian et al., "Contrastive Representation Distillation", ICLR 2020
+
+---
+
+## Reproducibility
+
+### Hardware
+- **GPU:** RTX Pro 6000 Blackwell Edition
+- **VRAM:** 96GB
+- **Compute:** 119 TFLOPs
+- **Training Time:** ~2-3 hours per configuration
+
+### Random Seeds
+All experiments use fixed random seeds for reproducibility:
+```python
+torch.manual_seed(42)
+np.random.seed(42)
+```
+
+### Model Weights Distribution
+All trained models available on Google Drive with:
+- Model checkpoints (`.pth` files)
+- Training logs (`.json` files)
+- Comprehensive visualizations (`.png`, `.html`)
+
+---
+
+## Future Work
+
+1. **Extended Architectures:** Test on deeper networks (ResNet-101, WideResNet)
+2. **Larger Datasets:** Evaluate on ImageNet, iNaturalist
+3. **Multi-Teacher:** Ensemble knowledge from multiple teachers
+4. **Theoretical Analysis:** Formal proof of alignment-uniformity trade-off
+5. **Publication:** Prepare for submission to WACV/BMVC
+
+---
+
+## Acknowledgments
+
+- **Course Instructor:** Professor Muhammad Tahir
+- **Team Members:** Ibrahim Murtaza, Jibran Mazhar, Muhammad Ahsan Salar Khan
+- **Institution:** Lahore University of Management Sciences (LUMS)
+- **Hardware Support:** RTX Pro 6000 Blackwell Edition (96GB VRAM)
+
+Special thanks to:
+- Khosla et al. for Supervised Contrastive Learning
+- Wang & Isola for the alignment-uniformity framework
+- Tian et al. for Contrastive Representation Distillation
+
+---
 
 ## License
 This project is for academic purposes as part of the ATML course at LUMS.
 
-## Acknowledgments
-- **Course Instructor:** Professor Muhammad Tahir
-- **Team Members:** Ibrahim Murtaza, Jibran Mazhar, Muhammad Ahsan Salar Khan
-- **Hardware:** RTX Pro 6000 Blackwell Edition (96GB VRAM, 119 TFLOPs)
-
 ## Contact
-For questions or issues, please open an issue on the repository.
+For questions or issues, please open an issue on the repository or contact the team members.
 
 ---
 
-**Last Updated:** December 21, 2024
+**Last Updated:** December 23, 2025
+
+**Status:** ✅ All experiments completed | 📊 Results finalized | 🎯 Best model: 73.35% accuracy

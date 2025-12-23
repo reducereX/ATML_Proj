@@ -5,3 +5,6 @@ scikit-learn
 timm
 torch
 torchvision
+plotly
+kaleido
+nbformat
