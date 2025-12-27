@@ -1,7 +1,7 @@
-# Logit-Weighted Supervised Contrastive Representation Distillation (LW-SupCRD)
+# Semantic Force Weighted Supervised Contrastive Learning (SFW-SupCon)
 
 ## Project Overview
-This project implements and evaluates **Logit-Weighted Supervised Contrastive Representation Distillation (LW-SupCRD)**, a novel knowledge distillation framework that combines supervised contrastive learning with teacher-guided semantic weighting on CIFAR-100.
+This project implements and evaluates **Semantic Force Weighted Supervised Contrastive Learning Distillation (SFW-SupCon)**, a novel knowledge distillation framework that combines supervised contrastive learning with teacher-guided semantic weighting on CIFAR-100.
 
 **Key Innovation:** Uses teacher logits to semantically weight contrastive forces, achieving superior representation learning compared to standard supervised contrastive methods.
 
@@ -47,8 +47,8 @@ ATML_Proj/
 │       ├── student_*_temp_*.json (temperature sweep)
 │       ├── baseline_crd_nobank_training_log.json
 │       ├── baseline_crd_bank4096_training_log.json
-│       ├── lwsupcrd_nobank_training_log.json
-│       └── lwsupcrd_bank4096_training_log.json
+│       ├── sfwsupcon_nobank_training_log.json
+│       └── sfwsupcon_bank4096_training_log.json
 │
 ├── plots/
 │   ├── t-SNE visualizations (tsne_*.png)
@@ -64,8 +64,8 @@ ATML_Proj/
     ├── student_alpha_1.0_beta_10.0_temp_0.07_resnet18_cifar100.pth ⭐ (73.35% - BEST)
     ├── student_baseline_crd_nobank_resnet18_cifar100.pth (68.15%)
     ├── student_baseline_crd_bank4096_resnet18_cifar100.pth (69.56%)
-    ├── student_lwsupcrd_nobank_resnet18_cifar100.pth (74.76%)
-    ├── student_lwsupcrd_bank4096_resnet18_cifar100.pth (75.63%)
+    ├── student_sfwsupcon_nobank_resnet18_cifar100.pth (74.76%)
+    ├── student_sfwsupcon_bank4096_resnet18_cifar100.pth (75.63%)
     └── student_*_resnet18_cifar100.pth (various configurations)
 ```
 
@@ -80,7 +80,7 @@ Download these essential models from Google Drive and place them in `pth_models/
 
 #### Best Model (Recommended) 🏆
 - `student_alpha_1.0_beta_10.0_temp_0.07_resnet18_cifar100.pth` - **73.35% accuracy** (best original)
-- `student_lwsupcrd_bank4096_resnet18_cifar100.pth` - **75.63% accuracy** (best with memory bank)
+- `student_sfwsupcon_bank4096_resnet18_cifar100.pth` - **75.63% accuracy** (best with memory bank)
 
 #### Baselines & Ablations (Optional)
 - `student_baseline_crd_resnet18_cifar100.pth` - Baseline CRD (68.05%)
@@ -95,9 +95,9 @@ Download these essential models from Google Drive and place them in `pth_models/
 
 | Method | Test Acc | Δ vs SupCon | Alignment ↓ | Uniformity ↓ | Key Features |
 |--------|----------|-------------|-------------|--------------|--------------|
-| **🏆 LW-SupCRD + Bank4096** | **75.63%** | **+6.55%** | 0.8336 | **-3.5073** | Best overall - momentum memory bank |
-| LW-SupCRD (no bank) | 74.76% | +5.68% | 1.0835 | **-3.7314** | Best uniformity |
-| **LW-SupCRD (τ=0.07)** | **73.35%** | **+4.27%** | 1.1990 | -3.7104 | Original best (no bank) |
+| **🏆 SFW-SupCon + Bank4096** | **75.63%** | **+6.55%** | 0.8336 | **-3.5073** | Best overall - momentum memory bank |
+| SFW-Supcon (no bank) | 74.76% | +5.68% | 1.0835 | **-3.7314** | Best uniformity |
+| **SFW-Supcon (τ=0.07)** | **73.35%** | **+4.27%** | 1.1990 | -3.7104 | Original best (no bank) |
 | Baseline CRD + Bank4096 | 69.56% | +0.48% | 0.8098 | -2.0739 | Memory bank helps baseline |
 | **Baseline SupCon** | 69.08% | - | 0.4377 | -2.5665 | Strong alignment, weak uniformity |
 | Baseline CRD (no bank) | 68.15% | -0.93% | 0.9162 | -2.2804 | Poor both metrics |
@@ -105,7 +105,7 @@ Download these essential models from Google Drive and place them in `pth_models/
 | Undistilled Student | 67.93% | -1.15% | 0.6631 | -1.7332 | Terrible uniformity |
 | **Teacher (ResNet-50)** | 80.75% | +11.67% | 0.5928 | -3.4649 | Reference upper bound |
 
-**Key Takeaway:** LW-SupCRD with momentum memory bank achieves **75.63%**, a **+6.55%** improvement over baseline SupCon. The semantic weighting combined with 4,096 momentum-updated negatives provides optimal balance between alignment (0.8336) and uniformity (-3.5073).
+**Key Takeaway:** SFW-Supcon with momentum memory bank achieves **75.63%**, a **+6.55%** improvement over baseline SupCon. The semantic weighting combined with 4,096 momentum-updated negatives provides optimal balance between alignment (0.8336) and uniformity (-3.5073).
 
 ---
 
@@ -156,13 +156,13 @@ Download these essential models from Google Drive and place them in `pth_models/
 
 | Method | Bank Size | Test Acc | Train Acc | Gap | Alignment ↓ | Uniformity ↓ | Observation |
 |--------|-----------|----------|-----------|-----|-------------|--------------|-------------|
-| **LW-SupCRD** | **4096** | **75.63%** | **95.72%** | 20.09% | **0.8336** | -3.5073 | ✅ Best overall |
-| LW-SupCRD | None | 74.76% | 89.80% | 14.96% | 1.0835 | **-3.7314** | Best uniformity |
+| **SFW-Supcon** | **4096** | **75.63%** | **95.72%** | 20.09% | **0.8336** | -3.5073 | ✅ Best overall |
+| SFW-Supcon | None | 74.76% | 89.80% | 14.96% | 1.0835 | **-3.7314** | Best uniformity |
 | Baseline CRD | 4096 | 69.56% | 78.57% | 9.01% | 0.8098 | -2.0739 | Bank helps baseline |
 | Baseline CRD | None | 68.15% | 73.70% | 5.55% | 0.9162 | -2.2804 | Weak both metrics |
 
 **Memory Bank Impact:**
-- **LW-SupCRD:** +0.87% (4,096 negatives vs 127 in-batch)
+- **SFW-Supcon:** +0.87% (4,096 negatives vs 127 in-batch)
 - **Baseline CRD:** +1.41% (larger relative improvement)
 - **Key Finding:** Momentum memory bank (K=4,096, momentum=0.5) provides measurable gains by improving uniformity through diverse negative sampling
 
@@ -175,7 +175,7 @@ Download these essential models from Google Drive and place them in `pth_models/
 **Why Banks Help:**
 - More negatives → better uniformity (wider hypersphere coverage)
 - Momentum smoothing → prevents staleness (vs failed FIFO queue approach)
-- Complements semantic weighting → LW-SupCRD captures most benefit already, bank adds marginal gains
+- Complements semantic weighting → SFW-Supcon captures most benefit already, bank adds marginal gains
 
 ---
 
@@ -239,13 +239,13 @@ For fine-grained classification (100 classes), **uniformity is more critical tha
 - **Optimization challenge:** 33× more gradient terms requires careful tuning
 - **Best config:** WD=1e-4, cosine annealing, 50 epochs
 
-**Key Insight:** Memory banks improve uniformity (more negatives = better coverage), but LW-SupCRD's semantic weighting already captures most of the benefit. Bank provides marginal +0.87% gain vs +1.41% for baseline CRD.
+**Key Insight:** Memory banks improve uniformity (more negatives = better coverage), but SFW-Supcon's semantic weighting already captures most of the benefit. Bank provides marginal +0.87% gain vs +1.41% for baseline CRD.
 
 ---
 
 ### **4. Student Surpasses Teacher in Uniformity** 🎯
 
-| Metric | Teacher | LW-SupCRD (no bank) | LW-SupCRD + Bank |
+| Metric | Teacher | SFW-Supcon (no bank) | SFW-Supcon + Bank |
 |--------|---------|---------------------|------------------|
 | Alignment | **0.5928** | 1.0835 | 0.8336 |
 | Uniformity | -3.4649 | **-3.7314** | -3.5073 |
@@ -283,8 +283,8 @@ Standard supervised contrastive learning - pull positives only.
 #### 2. **Baseline CRD** (Tian et al., 2020)
 Contrastive Representation Distillation - instance matching (adapted as in-batch contrastive).
 
-#### 3. **LW-SupCRD** (Ours)
-Logit-weighted supervised contrastive with adaptive forces:
+#### 3. **SFW-Supcon** (Ours)
+Weighted supervised contrastive with adaptive forces:
 
 ```python
 # Pull weight (semantic confidence)
@@ -343,7 +343,7 @@ All experiments include:
   - Features: Rotate with mouse, zoom with scroll, click legend to toggle classes
   - Shows both "All Classes" and "10 Random Classes" views side-by-side
   - Example files:
-    - `plots/lwsupcrd_bank4096_hypersphere.html` - Best model (75.63%)
+    - `plots/sfwsupcon_bank4096_hypersphere.html` - Best model (75.63%)
     - `plots/temp_0.07_hypersphere.html` - Best no-bank (73.35%)
     - `plots/baseline_supcon_hypersphere.html` - Baseline comparison
   
@@ -388,7 +388,7 @@ The repository includes **interactive 3D hypersphere visualizations** that show 
 
 **Recommended visualizations to explore:**
 ```
-plots/lwsupcrd_bank4096_hypersphere.html       # 🏆 Best model (75.63%)
+plots/sfwsupcon_bank4096_hypersphere.html       # 🏆 Best model (75.63%)
 plots/temp_0.07_hypersphere.html               # Best no-bank (73.35%)
 plots/baseline_supcon_hypersphere.html         # Compare with baseline (69.08%)
 plots/undistilled_hypersphere.html             # See the improvement
@@ -427,7 +427,7 @@ from models import ModelWrapper
 
 # Load best model (with memory bank)
 model = ModelWrapper(num_classes=100, arch='resnet18')
-checkpoint = torch.load('pth_models/student_lwsupcrd_bank4096_resnet18_cifar100.pth')
+checkpoint = torch.load('pth_models/student_sfwsupcon_bank4096_resnet18_cifar100.pth')
 model.load_state_dict(checkpoint)
 model.eval()
 
@@ -468,8 +468,8 @@ with torch.no_grad():
 If you use this code or findings in your research, please cite:
 
 ```bibtex
-@misc{lw_supcrd2025,
-  title={Logit-Weighted Supervised Contrastive Representation Distillation: 
+@misc{sfw_supcon2025,
+  title={Semantic Force Weighted Supervised Contrastive Learning Distillation: 
          Achieving Superior Knowledge Transfer through Semantic Force Weighting 
          and Momentum Memory Banks},
   author={Ibrahim Murtaza, Jibran Mazhar, Muhammad Ahsan Salar Khan},
