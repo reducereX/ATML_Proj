@@ -60,7 +60,7 @@ ATML_Proj/
     ├── student_baseline_supcon_resnet18_cifar100.pth (69.08%)
     ├── student_baseline_crd_resnet18_cifar100.pth (68.05%)
     ├── student_undistilled_resnet18_cifar100.pth (67.93%)
-    ├── student_alpha_1.0_beta_10.0_temp_0.07_resnet18_cifar100.pth ⭐ (73.35% - BEST)
+    ├── student_alpha_1.0_beta_10.0_temp_0.07_resnet18_cifar100.pth
     ├── student_baseline_crd_nobank_resnet18_cifar100.pth (68.15%)
     ├── student_baseline_crd_bank4096_resnet18_cifar100.pth (69.56%)
     ├── student_sfwsupcon_nobank_resnet18_cifar100.pth (74.76%)
@@ -230,7 +230,6 @@ For fine-grained classification (100 classes), **uniformity is more critical tha
 **Three Failed Approaches:**
 1. **FIFO Queue (MoCo-style):** Stale features from 30+ batches → NaN losses
 2. **Aggressive LR + FIFO:** Loss spikes to 26+, accuracy stuck at ~7%
-3. **Strong WD (5e-4) + Batch128:** Feature collapse after epoch 11
 
 **Successful Approach - Momentum Memory Bank:**
 - **Index-based with momentum:** Prevents staleness while maintaining freshness
