@@ -25,8 +25,7 @@ Your directory structure should look like:
 ATML_Proj/
 │
 ├── .gitignore
-├── DeSupCon.ipynb
-├── desupcon.py
+├── SFW_SupCon.ipynb
 ├── LICENSE
 ├── README.md
 ├── requirements.txt
@@ -409,7 +408,7 @@ plots/baseline_crd_bank4096_hypersphere.html   # Memory bank impact on baseline
 
 ### Running the Code
 
-1. Open `DeSupCon.ipynb` in Jupyter or run `desupcon.py` directly
+1. Open `SFW_SupCon.ipynb` in Jupyter
 2. Download required models from Google Drive
 3. Place models in `pth_models/` directory
 4. Run all cells sequentially
